@@ -39,11 +39,11 @@ cd IP_Lab
 python exp4_edge_detection.py
 ```
 
-## VS Code snippets
+## Snippets
 
-Every experiment is also available as a snippet, so you can paste the full script anywhere. In a `.py` file, type a trigger and press **Enter** (or **Tab**).
+Every experiment is available as a snippet, so you can paste the full script anywhere. There are two versions: **Espanso** (works in any app) and **VS Code** (works only in VS Code `.py` files). Both use the same names, listed below.
 
-| Experiment | Triggers |
+| Experiment | Names |
 |---|---|
 | 1.1 Square thumbnail | `exp1_1`, `thumbnail` |
 | 1.2 Channel split & grayscale | `exp1_2`, `channels`, `grayscale` |
@@ -58,9 +58,37 @@ Every experiment is also available as a snippet, so you can paste the full scrip
 | 7 Segmentation | `exp7`, `segmentation`, `watershed` |
 | 8 Object detection | `exp8`, `yolo`, `detection` |
 
-Tips:
-- Typing just `exp1` lists all five experiment 1 snippets.
-- The snippets live in `%APPDATA%\Code\User\snippets\python.json`. A backup of the file from before they were added is `python.json.pre-ip-lab.bak` in the same folder.
+### Espanso (global, any app)
+
+Type a colon followed by the name, e.g. `:histogram` or `:exp4`. The code is pasted via the clipboard, so editor auto-indent and auto-closing brackets don't mangle it.
+
+| Experiment | Triggers |
+|---|---|
+| 1.1 Square thumbnail | `:exp1_1`, `:thumbnail` |
+| 1.2 Channel split & grayscale | `:exp1_2`, `:channels`, `:grayscale` |
+| 1.3 Smart mirror | `:exp1_3`, `:mirror`, `:flip` |
+| 1.4 Proportional resize | `:exp1_4`, `:resize` |
+| 1.5 Contrast + vignette | `:exp1_5`, `:vignette`, `:contrast` |
+| 2 Noise filtering | `:exp2`, `:noise`, `:filtering` |
+| 3 Histogram | `:exp3`, `:histogram` |
+| 4 Edge detection | `:exp4`, `:edge` |
+| 5 Morphology | `:exp5`, `:morphology` |
+| 6 Huffman compression | `:exp6`, `:huffman` |
+| 7 Segmentation | `:exp7`, `:segmentation`, `:watershed` |
+| 8 Object detection | `:exp8`, `:yolo`, `:detection` |
+
+- Definitions live in `%APPDATA%\espanso\match\ip_lab.yml`. Espanso picks up changes automatically; if not, run `espanso restart`.
+- Espanso needs to be running (check the tray icon, or `espanso status`).
+- The trigger fires as soon as you finish typing it, so `:exp1` alone does nothing; type a full trigger such as `:exp1_1`.
+
+### VS Code (`.py` files only)
+
+Type the name (no colon) and press **Enter** or **Tab**, e.g. `histogram` or `exp4`. Typing just `exp1` lists all five experiment 1 snippets.
+
+- Definitions live in `%APPDATA%\Code\User\snippets\python.json`. A backup from before they were added is `python.json.pre-ip-lab.bak` in the same folder.
+- If a name doesn't appear, press **Ctrl+Space**, or set `"editor.snippetSuggestions": "top"` in VS Code settings.
+
+### Notes for both
+
 - Snippets are copies of the scripts and do not update automatically if a script changes.
 - They use the image filenames above, so they only run in a folder containing those images; change the filename for your own image.
-- If a trigger doesn't appear, press **Ctrl+Space**, or set `"editor.snippetSuggestions": "top"` in VS Code settings.
