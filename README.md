@@ -77,7 +77,8 @@ Type a colon followed by the name, e.g. `:histogram` or `:exp4`. The code is pas
 | 7 Segmentation | `:exp7`, `:segmentation`, `:watershed` |
 | 8 Object detection | `:exp8`, `:yolo`, `:detection` |
 
-- Definitions live in `%APPDATA%\espanso\match\ip_lab.yml`. Espanso picks up changes automatically; if not, run `espanso restart`.
+- Definitions live in `%APPDATA%\espanso\match\ip_lab.yml`. A copy is kept in this repo at `snippets/ip_lab.yml`; to set up on another machine, copy it into that folder.
+- Espanso picks up changes automatically; if not, run `espanso restart`.
 - Espanso needs to be running (check the tray icon, or `espanso status`).
 - The trigger fires as soon as you finish typing it, so `:exp1` alone does nothing; type a full trigger such as `:exp1_1`.
 

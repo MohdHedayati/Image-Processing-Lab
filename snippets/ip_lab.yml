@@ -1,0 +1,813 @@
+# Espanso snippets for Image Processing Lab (exp1-exp8). Type :trigger in any app.
+# Generated from the exp*.py files in IP_Lab. Several triggers can map to one experiment.
+matches:
+  - triggers: [":exp1_1", ":thumbnail"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 1.1 - Square Thumbnail Generation
+      --------------------------------------------
+      Goal: turn any image into a 250x250 square thumbnail WITHOUT stretching it.
+      Idea: crop the largest centered square first, then shrink it.
+      Input : exp1_input.jpg
+      Output: exp1_1_thumbnail.png
+      """
+      from PIL import Image
+      import matplotlib.pyplot as plt
+
+
+      def generate_square_thumbnail(image_path, output_path="exp1_1_thumbnail.png"):
+          img = Image.open(image_path)
+          original_width, original_height = img.size
+
+          # Step 1: the square's side is the shorter side of the image
+          shortest_side = min(original_width, original_height)
+
+          # Step 2: compute crop box so the square is centered
+          # (left/top = half of the leftover space on each axis)
+          left = (original_width - shortest_side) / 2
+          top = (original_height - shortest_side) / 2
+          right = (original_width + shortest_side) / 2
+          bottom = (original_height + shortest_side) / 2
+
+          img_cropped = img.crop((left, top, right, bottom))
+
+          # Step 3: shrink to 250x250. LANCZOS is a high-quality downscaling filter.
+          img_thumbnail = img_cropped.resize((250, 250), Image.Resampling.LANCZOS)
+
+          img_thumbnail.save(output_path)
+
+          # Show original and thumbnail side by side
+          fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+          axes[0].imshow(img)
+          axes[0].set_title(f"Original Image\n({original_width}x{original_height})")
+          axes[0].axis('off')
+
+          axes[1].imshow(img_thumbnail)
+          axes[1].set_title("Thumbnail\n(250x250)")
+          axes[1].axis('off')
+
+          plt.tight_layout()
+          plt.show()
+
+
+      generate_square_thumbnail("exp1_input.jpg")
+
+  - triggers: [":exp1_2", ":channels", ":grayscale"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 1.2 - Color Channel Splitting & Grayscale Conversion
+      ---------------------------------------------------------------
+      Goal: see what each color channel (B, G, R) contributes to an image,
+      and compare with the grayscale version.
+      Input : exp1_input.jpg
+      """
+      import cv2
+      import matplotlib.pyplot as plt
+
+
+      def split_and_grayscale(image_path):
+          # NOTE: OpenCV loads images in BGR order (not RGB!)
+          img_bgr = cv2.imread(image_path)
+
+          # Grayscale = weighted sum of channels (0.299R + 0.587G + 0.114B)
+          img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+
+          # Split into three single-channel (2D) images.
+          # Bright areas in a channel = lots of that color there.
+          b, g, r = cv2.split(img_bgr)
+
+          # Matplotlib expects RGB, so convert before displaying the color image
+          img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+
+          fig, axes = plt.subplots(1, 5, figsize=(20, 4))
+
+          axes[0].imshow(img_rgb)
+          axes[0].set_title("Original (RGB)")
+          axes[0].axis('off')
+
+          # cmap='gray' is needed, otherwise matplotlib shows 2D arrays in false color
+          axes[1].imshow(b, cmap='gray')
+          axes[1].set_title("Blue Channel")
+          axes[1].axis('off')
+
+          axes[2].imshow(g, cmap='gray')
+          axes[2].set_title("Green Channel")
+          axes[2].axis('off')
+
+          axes[3].imshow(r, cmap='gray')
+          axes[3].set_title("Red Channel")
+          axes[3].axis('off')
+
+          axes[4].imshow(img_gray, cmap='gray')
+          axes[4].set_title("Grayscale")
+          axes[4].axis('off')
+
+          plt.tight_layout()
+          plt.show()
+
+
+      split_and_grayscale("exp1_input.jpg")
+
+  - triggers: [":exp1_3", ":mirror", ":flip"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 1.3 - Smart Mirror (Orientation-Dependent Flip)
+      ----------------------------------------------------------
+      Goal: flip an image based on its shape.
+        - Landscape (wider than tall) -> flip horizontally (left <-> right)
+        - Portrait / square           -> flip vertically   (top <-> bottom)
+      Input : exp1_input.jpg
+      """
+      import cv2
+      import matplotlib.pyplot as plt
+
+
+      def smart_mirror(image_path):
+          img_bgr = cv2.imread(image_path)
+
+          # shape is (rows, cols, channels) -> height first, then width
+          height, width = img_bgr.shape[:2]
+
+          # cv2.flip flag: 1 = horizontal flip, 0 = vertical flip, -1 = both
+          if width > height:
+              flipped_bgr = cv2.flip(img_bgr, 1)
+              flip_type = "Horizontally"
+          else:
+              flipped_bgr = cv2.flip(img_bgr, 0)
+              flip_type = "Vertically"
+
+          # Convert BGR -> RGB for correct colors in matplotlib
+          img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+          flipped_rgb = cv2.cvtColor(flipped_bgr, cv2.COLOR_BGR2RGB)
+
+          fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+          axes[0].imshow(img_rgb)
+          axes[0].set_title(f"Original\n({width}x{height})")
+          axes[0].axis('off')
+
+          axes[1].imshow(flipped_rgb)
+          axes[1].set_title(f"Flipped {flip_type}")
+          axes[1].axis('off')
+
+          plt.tight_layout()
+          plt.show()
+
+
+      smart_mirror("exp1_input.jpg")
+
+  - triggers: [":exp1_4", ":resize"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 1.4 - Proportional Resize
+      ------------------------------------
+      Goal: resize an image to a width of 500px while keeping its aspect ratio
+      (so it doesn't look stretched or squashed).
+      Input : exp1_input.jpg
+      Output: exp1_4_resized_500px.png
+      """
+      from PIL import Image
+      import matplotlib.pyplot as plt
+
+
+      def resize_proportional(image_path, output_path="exp1_4_resized_500px.png"):
+          img = Image.open(image_path)
+          original_width, original_height = img.size
+
+          # Pick the new width, then derive the height from the original aspect ratio
+          target_width = 500
+          aspect_ratio = original_height / original_width
+          target_height = int(target_width * aspect_ratio)
+
+          img_resized = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+          # PNG can't store every JPEG mode (e.g. CMYK), so convert if needed
+          if img_resized.mode not in ('RGB', 'RGBA'):
+              img_resized = img_resized.convert('RGBA')
+
+          img_resized.save(output_path, "PNG")
+
+          fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+          axes[0].imshow(img)
+          axes[0].set_title(f"Original\n({original_width}x{original_height})")
+          axes[0].axis('off')
+
+          axes[1].imshow(img_resized)
+          axes[1].set_title(f"Proportionally Resized\n({target_width}x{target_height})")
+          axes[1].axis('off')
+
+          plt.tight_layout()
+          plt.show()
+
+
+      resize_proportional("exp1_input.jpg")
+
+  - triggers: [":exp1_5", ":vignette", ":contrast"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 1.5 - Contrast Boost + Vignette Effect
+      -------------------------------------------------
+      Goal: (1) increase contrast/brightness, (2) darken the image edges
+      smoothly using a Gaussian mask (a "vignette" look).
+      Input : exp1_input.jpg
+      """
+      import cv2
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+
+      def contrast_and_vignette(image_path):
+          img = cv2.imread(image_path)
+
+          # Linear adjustment: output = alpha * pixel + beta
+          #   alpha > 1 -> more contrast, beta > 0 -> brighter.
+          # convertScaleAbs also clips to the 0-255 range for us.
+          contrast_img = cv2.convertScaleAbs(img, alpha=1.3, beta=10)
+
+          rows, cols = contrast_img.shape[:2]
+
+          # Build a 2D Gaussian "bump": 1D Gaussians along each axis, multiplied together.
+          # The center is bright (1.0) and it fades towards the edges.
+          kernel_x = cv2.getGaussianKernel(cols, cols / 2)
+          kernel_y = cv2.getGaussianKernel(rows, rows / 2)
+          kernel_2d = kernel_y * kernel_x.T  # (rows x 1) * (1 x cols) = (rows x cols)
+
+          # Normalize so the center value is exactly 1 (no change in the middle)
+          mask = kernel_2d / kernel_2d.max()
+
+          # Stack the mask 3 times so it can multiply all B, G, R channels
+          mask_3d = np.dstack([mask] * 3)
+
+          # Multiply pixels by the mask: center unchanged, edges darkened
+          vignette_img = (contrast_img * mask_3d).astype(np.uint8)
+
+          # BGR -> RGB for display
+          img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+          vignette_rgb = cv2.cvtColor(vignette_img, cv2.COLOR_BGR2RGB)
+
+          fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+          axes[0].imshow(img_rgb)
+          axes[0].set_title("Original")
+          axes[0].axis('off')
+
+          axes[1].imshow(vignette_rgb)
+          axes[1].set_title("Contrast & Vignette Applied")
+          axes[1].axis('off')
+
+          plt.tight_layout()
+          plt.show()
+
+
+      contrast_and_vignette("exp1_input.jpg")
+
+  - triggers: [":exp2", ":noise", ":filtering"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 2 - Noise Smoothing with Linear & Non-Linear Filters
+      ---------------------------------------------------------------
+      Goal: add noise to an image, then remove it with different filters and
+      compare how well each one works.
+        - Salt & pepper noise (random black/white pixels) -> Mean (linear) vs Median (non-linear)
+        - Gaussian noise (random intensity variation)     -> Gaussian (linear) filter
+
+      Key takeaway: the median filter ignores extreme outliers (it sorts the
+      neighborhood and picks the middle value), so it removes salt & pepper noise
+      much better than the mean filter, which gets pulled by the 0/255 pixels.
+      Input : exp2_input.jpg
+      """
+      import cv2
+      import numpy as np
+      import matplotlib.pyplot as plt
+      import random
+
+
+      def add_salt_and_pepper_noise(image, prob):
+          """Randomly turn a fraction of pixels black (pepper) or white (salt).
+
+          prob = chance of a pixel becoming black; the same chance applies to white,
+          so the total noisy fraction is about 2 * prob.
+          """
+          noisy_image = np.zeros(image.shape, np.uint8)
+          thres = 1 - prob  # random numbers above this become salt
+          for i in range(image.shape[0]):
+              for j in range(image.shape[1]):
+                  rdn = random.random()      # uniform random number in [0, 1)
+                  if rdn < prob:
+                      noisy_image[i][j] = 0          # pepper (black)
+                  elif rdn > thres:
+                      noisy_image[i][j] = 255        # salt (white)
+                  else:
+                      noisy_image[i][j] = image[i][j]  # keep original pixel
+          return noisy_image
+
+
+      def add_gaussian_noise(image, mean=0, sigma=25):
+          """Add random values drawn from a Gaussian (bell-curve) distribution to every pixel.
+
+          sigma controls the noise strength: larger sigma = grainier image.
+          """
+          noise = np.random.normal(mean, sigma, image.shape)
+          # Use float to avoid uint8 overflow, then clip back into the valid 0-255 range
+          noisy_image = np.clip(image.astype(np.float32) + noise, 0, 255).astype(np.uint8)
+          return noisy_image
+
+
+      # Load as grayscale (single channel) to keep the experiment simple
+      original_image = cv2.imread('exp2_input.jpg', cv2.IMREAD_GRAYSCALE)
+
+      # ---------- Salt & pepper noise: linear vs non-linear filter ----------
+      sp_noisy_image = add_salt_and_pepper_noise(original_image, 0.05)
+
+      # Mean filter (linear): each pixel becomes the average of its 3x3 neighborhood.
+      # Extreme 0/255 pixels get averaged in, so noise is smeared rather than removed.
+      mean_filtered = cv2.blur(sp_noisy_image, (3, 3))
+
+      # Median filter (non-linear): each pixel becomes the middle value of its sorted
+      # 3x3 neighborhood. Outliers end up at the ends of the list and are ignored.
+      median_filtered = cv2.medianBlur(sp_noisy_image, 3)
+
+      # ---------- Gaussian noise: Gaussian smoothing ----------
+      gaussian_noisy_image = add_gaussian_noise(original_image, mean=0, sigma=25)
+
+      # Gaussian filter (linear): weighted average where pixels closer to the center
+      # count more, giving smoother and more natural results than a plain mean.
+      # (5, 5) = kernel size, 0 = let OpenCV choose the standard deviation from it.
+      gaussian_filtered = cv2.GaussianBlur(gaussian_noisy_image, (5, 5), 0)
+
+      # ---------- Display everything in a 2x3 grid ----------
+      plt.figure(figsize=(15, 10))
+
+      plt.subplot(2, 3, 1)
+      plt.imshow(original_image, cmap='gray')
+      plt.title('Original Image')
+      plt.axis('off')
+
+      plt.subplot(2, 3, 2)
+      plt.imshow(sp_noisy_image, cmap='gray')
+      plt.title('Salt & Pepper Noise')
+      plt.axis('off')
+
+      plt.subplot(2, 3, 3)
+      plt.imshow(mean_filtered, cmap='gray')
+      plt.title('Mean Filtered')
+      plt.axis('off')
+
+      plt.subplot(2, 3, 4)
+      plt.imshow(median_filtered, cmap='gray')
+      plt.title('Median Filtered')
+      plt.axis('off')
+
+      plt.subplot(2, 3, 5)
+      plt.imshow(gaussian_noisy_image, cmap='gray')
+      plt.title('Gaussian Noise')
+      plt.axis('off')
+
+      plt.subplot(2, 3, 6)
+      plt.imshow(gaussian_filtered, cmap='gray')
+      plt.title('Gaussian Filtered')
+      plt.axis('off')
+
+      plt.tight_layout()
+      plt.show()
+
+  - triggers: [":exp3", ":histogram"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 3 - Histogram Equalization & Histogram Matching
+      ----------------------------------------------------------
+      Goal: improve image contrast by reshaping the intensity histogram.
+        - Equalization: spread intensities evenly across 0-255.
+        - Matching (specification): make the image's histogram look like
+          that of a reference image.
+      Inputs: exp3_original.jpg (to be modified), exp3_reference.jpg (target look)
+      """
+      import cv2
+      import numpy as np
+      import matplotlib.pyplot as plt
+      from skimage.exposure import match_histograms
+
+
+      def run_histogram_experiment(original_path, reference_path):
+          # Load both as grayscale so each pixel is a single 0-255 intensity
+          img_orig = cv2.imread(original_path, cv2.IMREAD_GRAYSCALE)
+          img_ref = cv2.imread(reference_path, cv2.IMREAD_GRAYSCALE)
+
+          # imread returns None (not an exception) when a file can't be read
+          if img_orig is None or img_ref is None:
+              print("Error: Could not read images. Please check the file paths.")
+              return
+
+          # Histogram equalization: flattens the histogram -> stronger contrast
+          img_eq = cv2.equalizeHist(img_orig)
+
+          # Histogram matching: remap original's intensities to follow the reference's histogram
+          img_matched = match_histograms(img_orig, img_ref)
+          img_matched = np.clip(img_matched, 0, 255).astype('uint8')  # back to valid 8-bit
+
+          images = [img_orig, img_eq, img_ref, img_matched]
+          titles = ['Original Image', 'Equalized Image', 'Reference Image', 'Matched Image']
+
+          plt.figure(figsize=(16, 8))
+
+          for i in range(4):
+              # Top row: the images
+              plt.subplot(2, 4, i + 1)
+              plt.imshow(images[i], cmap='gray', vmin=0, vmax=255)
+              plt.title(titles[i])
+              plt.axis('off')
+
+              # Bottom row: their histograms (pixel count per intensity level)
+              plt.subplot(2, 4, i + 5)
+              plt.hist(images[i].ravel(), bins=256, range=[0, 256], color='gray', edgecolor='black', alpha=0.7)
+              plt.title(titles[i] + ' Histogram')
+              plt.xlabel('Pixel Intensity')
+              plt.ylabel('Frequency')
+
+          plt.tight_layout()
+          plt.show()
+
+
+      run_histogram_experiment('exp3_original.jpg', 'exp3_reference.jpg')
+
+  - triggers: [":exp4", ":edge"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 4 - Edge Detection Operators
+      ---------------------------------------
+      Goal: compare classic edge detectors on the same image:
+      Roberts, Prewitt, Sobel, Laplacian and Canny.
+      Edges = places where intensity changes sharply, found via derivatives.
+      Input : exp4_input.jpg
+      """
+      import cv2
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+      image = cv2.imread('exp4_input.jpg')
+      gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)       # edge operators work on intensity
+      image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)   # only for display
+
+      # --- Roberts: tiny 2x2 diagonal kernels (fast, but sensitive to noise) ---
+      roberts_x = np.array([[1, 0], [0, -1]], dtype=np.float32)
+      roberts_y = np.array([[0, 1], [-1, 0]], dtype=np.float32)
+      # CV_64F keeps negative gradient values (uint8 would clip them to 0)
+      roberts_out_x = cv2.filter2D(gray, cv2.CV_64F, roberts_x)
+      roberts_out_y = cv2.filter2D(gray, cv2.CV_64F, roberts_y)
+      roberts = cv2.magnitude(roberts_out_x, roberts_out_y)  # sqrt(gx^2 + gy^2)
+
+      # --- Prewitt: 3x3 kernels, plain averaging across the gradient direction ---
+      prewitt_x = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], dtype=np.float32)   # vertical edges
+      prewitt_y = np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]], dtype=np.float32)   # horizontal edges
+      prewitt_out_x = cv2.filter2D(gray, cv2.CV_64F, prewitt_x)
+      prewitt_out_y = cv2.filter2D(gray, cv2.CV_64F, prewitt_y)
+      prewitt = cv2.magnitude(prewitt_out_x, prewitt_out_y)
+
+      # --- Sobel: like Prewitt but weights the center row/column more (smoother) ---
+      sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)  # d/dx
+      sobel_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)  # d/dy
+      sobel = cv2.magnitude(sobel_x, sobel_y)
+
+      # --- Laplacian: second derivative, direction-independent, very noise sensitive ---
+      laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+
+      # --- Canny: multi-stage (blur, gradient, thin edges, hysteresis thresholds) ---
+      # 100 / 200 = low / high thresholds: >200 strong edge, <100 discarded,
+      # in between kept only if connected to a strong edge.
+      canny = cv2.Canny(gray, 100, 200)
+
+      # --- Display everything in a 2x4 grid (the 8th slot is left empty) ---
+      plt.figure(figsize=(15, 8))
+
+      plt.subplot(2, 4, 1)
+      plt.imshow(image_rgb)
+      plt.title('Original')
+      plt.axis('off')
+
+      plt.subplot(2, 4, 2)
+      plt.imshow(gray, cmap='gray')
+      plt.title('Grayscale')
+      plt.axis('off')
+
+      plt.subplot(2, 4, 3)
+      plt.imshow(roberts, cmap='gray')
+      plt.title('Roberts')
+      plt.axis('off')
+
+      plt.subplot(2, 4, 4)
+      plt.imshow(prewitt, cmap='gray')
+      plt.title('Prewitt')
+      plt.axis('off')
+
+      plt.subplot(2, 4, 5)
+      plt.imshow(sobel, cmap='gray')
+      plt.title('Sobel')
+      plt.axis('off')
+
+      plt.subplot(2, 4, 6)
+      plt.imshow(laplacian, cmap='gray')
+      plt.title('Laplacian')
+      plt.axis('off')
+
+      plt.subplot(2, 4, 7)
+      plt.imshow(canny, cmap='gray')
+      plt.title('Canny')
+      plt.axis('off')
+
+      plt.tight_layout()
+      plt.show()
+
+  - triggers: [":exp5", ":morphology"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 5 - Morphological Operations
+      ---------------------------------------
+      Goal: apply shape-based operations to a binary image:
+      erosion, dilation, boundary extraction, small-object removal, skeletonization.
+      Input : none - a synthetic image is drawn in code (no image file needed).
+      """
+      import cv2
+      import numpy as np
+      import matplotlib.pyplot as plt
+      from skimage.morphology import skeletonize, remove_small_objects
+
+      # --- Build a test image: black 300x300 canvas with white shapes ---
+      image = np.zeros((300, 300), dtype=np.uint8)
+      cv2.rectangle(image, (50, 50), (150, 150), 255, -1)    # big square   (-1 = filled)
+      cv2.circle(image, (220, 100), 40, 255, -1)             # big circle
+      cv2.circle(image, (30, 250), 3, 255, -1)               # tiny speck (noise)
+      cv2.circle(image, (80, 270), 5, 255, -1)               # small speck (noise)
+      cv2.rectangle(image, (200, 220), (205, 225), 255, -1)  # small speck (noise)
+
+      # Structuring element: the 3x3 "probe" that slides over the image
+      kernel = np.ones((3, 3), np.uint8)
+
+      # Erosion: white regions shrink; tiny specks can vanish
+      eroded = cv2.erode(image, kernel, iterations=1)
+
+      # Dilation: white regions grow; gaps get filled
+      dilated = cv2.dilate(image, kernel, iterations=1)
+
+      # Boundary extraction: morphological gradient = dilation - erosion -> outlines only
+      boundary = cv2.morphologyEx(image, cv2.MORPH_GRADIENT, kernel)
+
+      # Remove small objects: skimage wants a boolean image; drop blobs under 50 pixels
+      bool_image = image > 0
+      cleaned_bool = remove_small_objects(bool_image, min_size=50)
+      cleaned_objects = (cleaned_bool * 255).astype(np.uint8)  # back to 0/255 for display
+
+      # Skeletonization: thin each shape down to a 1-pixel-wide centerline
+      skeleton_bool = skeletonize(bool_image)
+      skeleton = (skeleton_bool * 255).astype(np.uint8)
+
+      # --- Display results in a 2x3 grid ---
+      titles = ['Original Image', 'Erosion', 'Dilation', 'Boundary Extraction', 'Removed Small Objects', 'Skeletonization']
+      images = [image, eroded, dilated, boundary, cleaned_objects, skeleton]
+
+      plt.figure(figsize=(12, 8))
+      for i in range(6):
+          plt.subplot(2, 3, i + 1)
+          plt.imshow(images[i], cmap='gray')
+          plt.title(titles[i])
+          plt.axis('off')
+      plt.tight_layout()
+      plt.show()
+
+  - triggers: [":exp6", ":huffman"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 6 - Image Compression using Huffman Coding
+      -----------------------------------------------------
+      Goal: losslessly compress a grayscale image by giving frequent pixel values
+      SHORT bit codes and rare ones LONG codes, then report the savings.
+      Input : exp6_input.png
+      Output: printed code table + compression statistics (no file is written)
+
+      Steps: count pixel frequencies -> build Huffman tree -> read codes off the tree
+             -> compare original vs compressed size.
+      """
+      import cv2
+      import numpy as np
+      import heapq
+      import os
+
+
+      class Node:
+          """One node of the Huffman tree (leaf = a pixel value, internal = a merge)."""
+
+          def __init__(self, freq, symbol, left=None, right=None):
+              self.freq = freq      # how often this symbol (or whole subtree) occurs
+              self.symbol = symbol  # pixel value (None for internal nodes)
+              self.left = left
+              self.right = right
+              self.huff = ''        # bit on the edge to this node: '0' (left) or '1' (right)
+
+          # heapq needs this to always pop the node with the LOWEST frequency
+          def __lt__(self, nxt):
+              return self.freq < nxt.freq
+
+
+      def main():
+          image_name = 'exp6_input.png'
+
+          if not os.path.exists(image_name):
+              print(f"Error: {image_name} not found in the current directory.")
+              return
+
+          img = cv2.imread(image_name, cv2.IMREAD_GRAYSCALE)
+          height, width = img.shape
+
+          # --- Step 1: count how many times each pixel value (0-255) appears ---
+          frequencies = {}
+          for row in img:
+              for pixel in row:
+                  if pixel in frequencies:
+                      frequencies[pixel] += 1
+                  else:
+                      frequencies[pixel] = 1
+
+          # --- Step 2: build the Huffman tree using a min-heap ---
+          # Start with one leaf per symbol
+          nodes = []
+          for symbol, freq in frequencies.items():
+              heapq.heappush(nodes, Node(freq, symbol))
+
+          # Repeatedly merge the two rarest nodes into a parent until one root remains
+          while len(nodes) > 1:
+              left = heapq.heappop(nodes)    # rarest
+              right = heapq.heappop(nodes)   # second rarest
+
+              left.huff = '0'
+              right.huff = '1'
+
+              newNode = Node(left.freq + right.freq, None, left, right)
+              heapq.heappush(nodes, newNode)
+
+          # --- Step 3: walk the tree; the bits along the path to a leaf are its code ---
+          huffman_codes = {}
+
+          def generate_codes(node, val=''):
+              newVal = val + str(node.huff)
+              if node.left:
+                  generate_codes(node.left, newVal)
+              if node.right:
+                  generate_codes(node.right, newVal)
+              # Leaf node -> store the finished code for its pixel value
+              if not node.left and not node.right:
+                  huffman_codes[node.symbol] = newVal
+
+          generate_codes(nodes[0])
+
+          # --- Step 4: measure compression ---
+          original_size_bits = height * width * 8   # raw 8-bit grayscale
+          original_bytes = height * width
+
+          # Encoded data: each symbol's frequency x its code length
+          compressed_size_bits = sum(frequencies[symbol] * len(huffman_codes[symbol]) for symbol in frequencies)
+          # Overhead to store the code table (8 bits for symbol + its code), so the file is decodable
+          metadata_size_bits = sum(8 + len(huffman_codes[symbol]) for symbol in frequencies)
+          total_compressed_bits = compressed_size_bits + metadata_size_bits
+
+          compression_ratio = original_size_bits / total_compressed_bits           # >1 means smaller
+          space_saving = (1 - (total_compressed_bits / original_size_bits)) * 100  # percent saved
+
+          # --- Report ---
+          print(f"Original Image: {image_name}\n")
+          print(f"Image Dimensions: {width} x {height}")
+          print(f"Number of Pixel Intensities: {len(frequencies)}")
+          print(f"Original Image Size: {original_bytes} bytes\n")
+
+          print("Huffman Coding Table:")
+          print(f"{'Pixel Intensity':<20} {'Frequency':<15} {'Huffman Code'}")
+
+          for symbol in sorted(frequencies.keys()):
+              print(f"{symbol:<20} {frequencies[symbol]:<15} {huffman_codes[symbol]}")
+
+          print(f"\nOriginal Size:       {original_size_bits} bits")
+          print(f"Compressed Size:     {total_compressed_bits} bits")
+          print(f"Compression Ratio:   {compression_ratio:.4f}")
+          print(f"Space Saving:        {space_saving:.2f} %\n")
+          print("Image compression using Huffman Coding completed successfully.")
+
+
+      if __name__ == "__main__":
+          main()
+
+  - triggers: [":exp7", ":segmentation", ":watershed"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 7 - Image Segmentation: Edge-Based vs Region-Based
+      -------------------------------------------------------------
+      Goal: segment an image in two different ways and compare them.
+        - Edge-based  : Canny finds the outlines of objects.
+        - Region-based: Watershed floods "basins" starting from sure-object seeds
+                        and draws boundaries where the floods meet.
+      Input : exp7_input.jpg
+      """
+      import cv2
+      import numpy as np
+      import matplotlib.pyplot as plt
+
+      image = cv2.imread('exp7_input.jpg')
+      # Keep an untouched copy: the watershed step below paints on `image` in place
+      original = image.copy()
+
+      gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+      # ---------- Edge-based segmentation ----------
+      blurred = cv2.GaussianBlur(gray, (5, 5), 0)   # blur first to suppress noise edges
+      edges = cv2.Canny(blurred, 50, 150)           # low / high hysteresis thresholds
+
+      # ---------- Region-based segmentation (Watershed) ----------
+      # 1. Binarize with Otsu's automatic threshold (INV -> objects become white)
+      ret, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+      # 2. Opening (erode then dilate) removes small white noise
+      kernel = np.ones((3, 3), np.uint8)
+      opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=2)
+
+      # 3. Sure background: dilating the objects -> anything outside is definitely background
+      sure_bg = cv2.dilate(opening, kernel, iterations=3)
+
+      # 4. Sure foreground: pixels far from any background pixel (peaks of the distance map)
+      dist_transform = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
+      ret, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
+      sure_fg = np.uint8(sure_fg)
+
+      # 5. Unknown region = between sure background and sure foreground (watershed decides it)
+      unknown = cv2.subtract(sure_bg, sure_fg)
+
+      # 6. Label each sure-foreground blob with its own integer marker
+      ret, markers = cv2.connectedComponents(sure_fg)
+      markers = markers + 1            # shift so background is 1 (0 is reserved for "unknown")
+      markers[unknown == 255] = 0      # mark unknown pixels as 0
+
+      # 7. Run watershed; boundary pixels come back labeled -1
+      markers = cv2.watershed(image, markers)
+      image[markers == -1] = [255, 0, 0]   # paint boundaries (note: BGR -> this is blue in OpenCV)
+
+      # ---------- Display ----------
+      plt.figure(figsize=(15, 5))
+      plt.subplot(131), plt.imshow(cv2.cvtColor(original, cv2.COLOR_BGR2RGB)), plt.title('Original')
+      plt.subplot(132), plt.imshow(edges, cmap='gray'), plt.title('Edge-Based (Canny)')
+      plt.subplot(133), plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)), plt.title('Region-Based (Watershed)')
+      plt.show()
+
+  - triggers: [":exp8", ":yolo", ":detection"]
+    force_mode: clipboard
+    replace: |-
+      """
+      Experiment 8 - Object Detection with YOLOv8
+      -------------------------------------------
+      Goal: detect and label objects in an image using a pretrained YOLOv8 model.
+      YOLO ("You Only Look Once") predicts bounding boxes + class + confidence
+      in a single pass through a neural network.
+      Input : exp8_input.jpg
+      Model : yolov8n.pt (the "nano" model: smallest/fastest; auto-downloaded if missing)
+      """
+      from ultralytics import YOLO
+      import cv2
+      import matplotlib.pyplot as plt
+
+      # Load pretrained weights (trained on the COCO dataset, 80 everyday object classes)
+      model = YOLO("yolov8n.pt")
+      image = cv2.imread("exp8_input.jpg")
+
+      if image is None:
+          print("Error: Could not read image.")
+      else:
+          # Run inference; `results` has one entry per input image
+          results = model(image)
+
+          print("\nDetection Results")
+          for result in results:
+              for box in result.boxes:                 # one box per detected object
+                  class_id = int(box.cls[0])           # numeric class index
+                  confidence = float(box.conf[0])      # 0-1 certainty score
+                  label = model.names[class_id]        # index -> readable name (e.g. "dog")
+
+                  print(f"Object: {label.capitalize()}")
+                  print(f"Confidence: {confidence:.2f}\n")
+
+          # .plot() returns a copy of the image with boxes and labels drawn (BGR format)
+          annotated_image = results[0].plot()
+
+          plt.figure(figsize=(10, 8))
+          plt.imshow(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))  # BGR -> RGB for matplotlib
+          plt.title("YOLOv8 Object Detection Output")
+          plt.axis("off")
+          plt.show()
+
